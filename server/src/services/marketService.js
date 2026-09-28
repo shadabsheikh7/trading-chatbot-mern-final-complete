@@ -3,7 +3,6 @@ import axios from "axios";
 
 const prices = new Map();
 const candles = new Map();
-
 let ioInstance = null;
 
 export function setMarketSocket(io) {
@@ -19,15 +18,13 @@ export function getCandles(symbol) {
 }
 
 function broadcast(payload) {
-  if (ioInstance) {
-    ioInstance.emit("market", payload);
-  }
+  if (ioInstance) ioInstance.emit("market", payload);
 }
 
 export async function seedCandles(symbol = "BTCUSDT") {
   try {
     const { data } = await axios.get(
-      "https://api-gcp.binance.com/api/v3/klines",
+      "https://api.binance.com/api/v3/klines",
       {
         params: {
           symbol,
@@ -48,13 +45,8 @@ export async function seedCandles(symbol = "BTCUSDT") {
 
     candles.set(symbol, rows);
     prices.set(symbol, rows.at(-1)?.close ?? null);
-
-    console.log(`Candles seeded successfully: ${symbol}`);
   } catch (e) {
-    console.warn(
-      `Candle seed failed for ${symbol}:`,
-      e.response?.status || e.message,
-    );
+    console.warn("Candle seed failed:", e.message);
   }
 }
 
@@ -87,7 +79,6 @@ export function startMarketStream(
         stream.split("@")[0]
       ).toUpperCase();
 
-      // Real-time ticker price
       if (data.e === "24hrTicker") {
         const price = +data.c;
 
@@ -113,7 +104,6 @@ export function startMarketStream(
           .catch(() => {});
       }
 
-      // Real-time 1 minute candle
       if (data.e === "kline") {
         const k = data.k;
 
@@ -142,7 +132,10 @@ export function startMarketStream(
         });
       }
     } catch (e) {
-      console.warn("Market WebSocket message error:", e.message);
+      console.warn(
+        "Market WebSocket message error:",
+        e.message,
+      );
     }
   });
 
